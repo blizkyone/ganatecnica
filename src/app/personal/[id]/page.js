@@ -1,6 +1,7 @@
 "use client";
 import { UploadFileComponent } from "@/components/UploadFileComponent";
-import { deleteFileFromS3 } from "@/actions/uploadS3";
+import { FilePreviewComponent } from "@/components/FilePreviewComponent";
+import { CustomBreadcrumbs } from "@/components/CustomBreadcrumbs";
 import { useState } from "react";
 import React from "react";
 import { useParams } from "next/navigation";
@@ -15,8 +16,6 @@ export const Page = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [previewFile, setPreviewFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -101,84 +100,6 @@ export const Page = () => {
     }));
   };
 
-  const handleFileClick = async (fileKey) => {
-    try {
-      const response = await fetch(
-        `/api/s3/get-one-file?key=${encodeURIComponent(fileKey)}`
-      );
-      const data = await response.json();
-
-      if (data.signedUrl) {
-        setPreviewFile(fileKey);
-        setPreviewUrl(data.signedUrl);
-      }
-    } catch (error) {
-      console.error("Error getting file URL:", error);
-      setError("Error loading file preview");
-    }
-  };
-
-  const handleDownload = (fileUrl, fileName) => {
-    const link = document.createElement("a");
-    link.href = fileUrl;
-    link.download = fileName;
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const closePreview = () => {
-    setPreviewFile(null);
-    setPreviewUrl(null);
-  };
-
-  const getFileExtension = (fileName) => {
-    return fileName.split(".").pop().toLowerCase();
-  };
-
-  const isImageFile = (fileName) => {
-    const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp"];
-    return imageExtensions.includes(getFileExtension(fileName));
-  };
-
-  const isPdfFile = (fileName) => {
-    return getFileExtension(fileName) === "pdf";
-  };
-
-  const handleDeleteFile = async (fileKey) => {
-    const fileName = fileKey.replace(`${id}/`, "");
-
-    // Show confirmation dialog
-    const isConfirmed = window.confirm(
-      `¿Estás seguro de que quieres eliminar el archivo "${fileName}"?\n\nEsta acción no se puede deshacer.`
-    );
-
-    if (!isConfirmed) {
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const result = await deleteFileFromS3({ key: fileKey });
-
-      if (result.error) {
-        setError(`Error al eliminar el archivo: ${result.error}`);
-      } else {
-        // Refetch the files list to update the UI
-        await filesRefetch();
-        console.log(`File deleted successfully: ${fileName}`);
-      }
-    } catch (error) {
-      console.error("Error deleting file:", error);
-      setError(`Error al eliminar el archivo: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleSave = async () => {
     if (!formData.name.trim()) {
       setError("El nombre es obligatorio");
@@ -213,6 +134,9 @@ export const Page = () => {
 
   return (
     <div className="relative flex flex-col gap-6 p-4 min-h-screen">
+      {/* Breadcrumbs */}
+      <CustomBreadcrumbs currentPageName={data?.name} />
+
       {queryLoading && <Loading />}
       {queryError && <ErrorMessage error={queryError} />}
 
@@ -399,55 +323,14 @@ export const Page = () => {
           Subir Archivo
         </Button>
 
-        {filesLoading && <Loading />}
-        {filesError && <ErrorMessage error={filesError} />}
-        {filesData &&
-          filesData.map((file) => {
-            const fileName = file.replace(`${id}/`, "");
-            return (
-              <div
-                key={file}
-                className="mt-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => handleFileClick(file)}
-                    className="text-blue-600 hover:text-blue-800 hover:underline text-left flex-1"
-                  >
-                    <span className="flex items-center">
-                      {isImageFile(fileName) && (
-                        <span className="mr-2">🖼️</span>
-                      )}
-                      {isPdfFile(fileName) && <span className="mr-2">📄</span>}
-                      {!isImageFile(fileName) && !isPdfFile(fileName) && (
-                        <span className="mr-2">📎</span>
-                      )}
-                      {fileName}
-                    </span>
-                  </button>
-                  <div className="flex gap-2 ml-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleFileClick(file)}
-                      className="text-xs"
-                    >
-                      Preview
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteFile(file)}
-                      className="text-xs"
-                      disabled={isLoading}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        <FilePreviewComponent
+          filesData={filesData}
+          filesLoading={filesLoading}
+          filesError={filesError}
+          folderId={id}
+          onFilesRefetch={filesRefetch}
+          onError={setError}
+        />
       </div>
       {show && (
         <UploadFileComponent
@@ -455,69 +338,6 @@ export const Page = () => {
           setShow={setShow}
           refetch={filesRefetch}
         />
-      )}
-
-      {/* File Preview Modal */}
-      {previewFile && previewUrl && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] w-full overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">
-                {previewFile.replace(`${id}/`, "")}
-              </h3>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() =>
-                    handleDownload(
-                      previewUrl,
-                      previewFile.replace(`${id}/`, "")
-                    )
-                  }
-                  variant="outline"
-                  size="sm"
-                >
-                  Download
-                </Button>
-                <Button onClick={closePreview} variant="outline" size="sm">
-                  Close
-                </Button>
-              </div>
-            </div>
-
-            <div className="p-4 overflow-auto max-h-[calc(90vh-120px)]">
-              {isImageFile(previewFile) ? (
-                <img
-                  src={previewUrl}
-                  alt={previewFile.replace(`${id}/`, "")}
-                  className="max-w-full h-auto mx-auto"
-                />
-              ) : isPdfFile(previewFile) ? (
-                <iframe
-                  src={previewUrl}
-                  className="w-full h-[70vh]"
-                  title={previewFile.replace(`${id}/`, "")}
-                />
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-600 mb-4">
-                    Preview not available for this file type
-                  </p>
-                  <Button
-                    onClick={() =>
-                      handleDownload(
-                        previewUrl,
-                        previewFile.replace(`${id}/`, "")
-                      )
-                    }
-                    variant="outline"
-                  >
-                    Download File
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

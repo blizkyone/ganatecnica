@@ -1,6 +1,5 @@
 import mongoose, { model } from "mongoose";
 // import shortid from "shortid";
-
 const pointSchema = mongoose.Schema({
   type: {
     type: String,
@@ -13,24 +12,20 @@ const pointSchema = mongoose.Schema({
   },
 });
 
-const proyectoSchema = mongoose.Schema(
+const clienteSchema = mongoose.Schema(
   {
+    kindeId: String,
     name: { type: String, required: true },
-    customer_name: { type: String, required: true },
-    client: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Cliente",
-    },
-    address: String,
-    location: pointSchema,
     email: String,
     phone: String,
+    address: String,
+    location: pointSchema,
     haveDocuments: { type: Boolean, default: false },
   },
-  { timestamps: true, collection: "proyectos" }
+  { timestamps: true, collection: "clientes" }
 );
 
-const Proyecto =
-  mongoose.models?.Proyecto ?? mongoose.model("Proyecto", proyectoSchema);
+const Cliente =
+  mongoose.models?.Cliente ?? mongoose.model("Cliente", clienteSchema);
 
-export default Proyecto;
+export default Cliente;

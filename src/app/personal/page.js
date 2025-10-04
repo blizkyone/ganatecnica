@@ -22,7 +22,7 @@ export default function Page() {
   }, [data, query]);
 
   return (
-    <div className="flex flex-col p-16 min-h-screen">
+    <div className="flex flex-col gap-2 p-16 min-h-screen">
       <NewPersonalComponent refetch={refetch} />
       <div className="sticky -top-4 bg-white">
         <SearchBar query={query} setQuery={setQuery} />

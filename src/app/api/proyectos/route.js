@@ -1,13 +1,13 @@
-import Personal from "@/models/personalModel";
+import Proyecto from "@/models/projectModel";
 import connectDB from "@/database";
 
 export async function GET(req) {
   try {
     await connectDB();
 
-    const personal = await Personal.find().lean();
+    const proyectos = await Proyecto.find().lean();
 
-    return Response.json(personal, { status: 200 });
+    return Response.json(proyectos, { status: 200 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 400 });
   }
