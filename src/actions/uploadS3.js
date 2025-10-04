@@ -1,6 +1,10 @@
 "use server";
 import { s3Client } from "@/lib/s3";
-import { PutObjectCommand, S3ServiceException } from "@aws-sdk/client-s3";
+import {
+  PutObjectCommand,
+  DeleteObjectCommand,
+  S3ServiceException,
+} from "@aws-sdk/client-s3";
 import {
   compressPDFServerSide,
   compressPDFAggressive,
@@ -111,5 +115,29 @@ export async function uploadFileToS3({ file, key }) {
   } catch (error) {
     console.log(error);
     return { error: error.message };
+  }
+}
+
+export async function deleteFileFromS3({ key }) {
+  try {
+    const command = new DeleteObjectCommand({
+      Bucket: "ganatecnica",
+      Key: key,
+    });
+
+    const response = await s3Client.send(command);
+
+    console.log(`File deleted successfully: ${key}`);
+
+    return {
+      message: "File deleted successfully",
+      key: key,
+    };
+  } catch (error) {
+    console.error(`Error deleting file ${key}:`, error);
+    return {
+      error: error.message,
+      key: key,
+    };
   }
 }

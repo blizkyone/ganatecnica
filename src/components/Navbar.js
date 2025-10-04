@@ -17,7 +17,7 @@ export const Navbar = () => {
   const [animationParent] = useAutoAnimate();
 
   return (
-    <div className="relative bg-gray-50" ref={animationParent}>
+    <div className="relative bg-gray-50 h-20" ref={animationParent}>
       <div className="p-4 flex justify-between items-center">
         <div>
           <p className="text-xl">Ganatecnica</p>

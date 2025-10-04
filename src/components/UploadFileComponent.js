@@ -1,17 +1,31 @@
+"use client";
 import { FilePondComponent } from "@/components/FilePondComponent";
 import { uploadFileToS3 } from "@/actions/uploadS3";
 import { compressFileIfNeeded, formatFileSize } from "@/lib/fileCompression";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import Loading from "./Loading";
 
-export function UploadFileComponent({ folder }) {
+export function UploadFileComponent({ folder, setShow, refetch }) {
   const [files, setFiles] = useState([]);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [compressionInfo, setCompressionInfo] = useState(null);
+  const [fileName, setFileName] = useState("");
+
+  // Function to extract file extension from original filename
+  const getFileExtension = (filename) => {
+    const lastDotIndex = filename.lastIndexOf(".");
+    return lastDotIndex !== -1 ? filename.substring(lastDotIndex) : "";
+  };
 
   const uploadFile = async () => {
     if (files.length === 0) return;
+    if (!fileName.trim()) {
+      setCompressionInfo({ error: "Please enter a filename" });
+      return;
+    }
+
     setUploadLoading(true);
     setCompressionInfo(null);
 
@@ -46,9 +60,13 @@ export function UploadFileComponent({ folder }) {
         });
       }
 
-      const key = `test/${file.name}`;
+      // Extract file extension from original file
+      const fileExtension = getFileExtension(originalFile.name);
+
+      // Create key using folder, custom filename, and original file extension
+      const key = `${folder}/${fileName.trim()}${fileExtension}`;
       const result = await uploadFileToS3({ file, key });
-      console.log("Upload Result:", result);
+      refetch();
 
       // Handle server-side compression info from upload result
       if (result.compressionInfo && result.compressionInfo.wasCompressed) {
@@ -74,9 +92,35 @@ export function UploadFileComponent({ folder }) {
   };
 
   return (
-    <div>
+    <div className="absolute top-0 bottom-0 left-0 w-xl p-2 shadow bg-white">
+      <Button onClick={() => setShow(false)}>Close</Button>
+
+      {/* Filename input */}
+      <div className="mt-4 mb-4">
+        <label
+          htmlFor="filename"
+          className="block text-sm font-medium text-gray-700 mb-2"
+        >
+          File Name
+        </label>
+        <Input
+          id="filename"
+          type="text"
+          placeholder="Enter file name (without extension)"
+          value={fileName}
+          onChange={(e) => setFileName(e.target.value)}
+          className="w-full"
+        />
+        {files.length > 0 && (
+          <p className="text-xs text-gray-500 mt-1">
+            Extension will be:{" "}
+            <strong>{getFileExtension(files[0].file.name)}</strong>
+          </p>
+        )}
+      </div>
+
       <FilePondComponent
-        className="h-96 w-96"
+        className="h-96 w-full"
         files={files}
         setFiles={setFiles}
       />
@@ -163,10 +207,16 @@ export function UploadFileComponent({ folder }) {
         </div>
       )}
 
-      {files.length > 0 && (
+      {files.length > 0 && fileName.trim() && (
         <Button onClick={uploadFile} disabled={uploadLoading} className="mt-4">
           {uploadLoading ? <Loading /> : "Upload to S3"}
         </Button>
+      )}
+
+      {files.length > 0 && !fileName.trim() && (
+        <p className="text-sm text-red-600 mt-4">
+          Please enter a filename before uploading
+        </p>
       )}
     </div>
   );
