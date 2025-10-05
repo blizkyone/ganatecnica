@@ -1,13 +1,9 @@
 import mongoose from "mongoose";
-// import Dish from "./models/platilloModel";
-// import Menu from "./models/menuModel";
-// import Ingredient from "./models/ingredienteModel";
-// import User from "./models/userModel";
-// import Location from "./models/locationModel";
-// import Order from "./models/orderModel";
-// import Kitchen from "./models/kitchenModel";
-// import Survey from "./models/surveyModel";
-// import Prospect from "./models/prospectModel";
+import Proyecto from "@/models/projectModel.js";
+import DiaryEntry from "@/models/diaryEntryModel.js";
+import Personal from "./models/personalModel";
+import Cliente from "./models/clientModel";
+import User from "./models/userModel";
 
 const globalForMongoose = global;
 

@@ -77,13 +77,13 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // Update the entry
-    const updatedEntry = await DiaryEntry.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    });
+    // Update the entry - use save() to trigger pre-save hooks
+    existingEntry.startTime = updateData.startTime;
+    existingEntry.notes = updateData.notes;
+    existingEntry.endTime = updateData.endTime;
+    existingEntry.status = updateData.status;
 
-    // The pre-save hook will automatically calculate totalHours
+    const updatedEntry = await existingEntry.save();
 
     // Populate the response
     await updatedEntry.populate("worker", "name email");

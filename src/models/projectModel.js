@@ -36,6 +36,8 @@ const proyectoSchema = mongoose.Schema(
     email: String,
     phone: String,
     haveDocuments: { type: Boolean, default: false },
+    finalized: Date,
+    active: { type: Boolean, default: true },
   },
   { timestamps: true, collection: "proyectos" }
 );

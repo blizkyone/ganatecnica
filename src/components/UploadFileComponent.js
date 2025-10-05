@@ -92,7 +92,7 @@ export function UploadFileComponent({ folder, setShow, refetch }) {
   };
 
   return (
-    <div className="absolute top-0 bottom-0 left-0 w-xl p-2 shadow bg-white">
+    <div className="fixed top-0 bottom-0 left-0 w-xl p-2 shadow bg-white">
       <Button onClick={() => setShow(false)}>Close</Button>
 
       {/* Filename input */}

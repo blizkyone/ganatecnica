@@ -2,6 +2,8 @@
 import { UploadFileComponent } from "@/components/UploadFileComponent";
 import { FilePreviewComponent } from "@/components/FilePreviewComponent";
 import { CustomBreadcrumbs } from "@/components/CustomBreadcrumbs";
+import { PersonalWorkHistory } from "./PersonalWorkHistory";
+import PersonalAvailabilityIndicator from "@/components/PersonalAvailabilityIndicator";
 import { useState } from "react";
 import React from "react";
 import { useParams } from "next/navigation";
@@ -143,8 +145,11 @@ export const Page = () => {
       {data && (
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">{data.name}</h1>
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold">{data.name}</h1>
+              <PersonalAvailabilityIndicator personalId={id} />
+            </div>
             {!isEditing && (
               <Button onClick={handleEdit} variant="outline">
                 Editar Información
@@ -313,8 +318,12 @@ export const Page = () => {
               </div>
             )}
           </div>
+
+          {/* Personal Work History Section */}
+          <PersonalWorkHistory personalId={id} />
         </div>
       )}
+
       {/* File Upload Section */}
       <div className="bg-white border rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">Documentos</h2>

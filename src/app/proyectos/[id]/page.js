@@ -101,6 +101,7 @@ export const Page = () => {
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             onDiaryRefetch={refetchDiary}
+            onUpdate={refetch}
           />
 
           <ProjectDocuments

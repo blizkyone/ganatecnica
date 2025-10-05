@@ -1,5 +1,6 @@
 "use client";
 import NewPersonalComponent from "./NewPersonalComponent";
+import PersonalAvailabilityBadge from "@/components/PersonalAvailabilityBadge";
 import { useQuery } from "@tanstack/react-query";
 import ErrorMessage from "@/components/Message";
 import Loading from "@/components/Loading";
@@ -11,8 +12,11 @@ export default function Page() {
   const [query, setQuery] = useState("");
 
   const { data, error, isLoading, refetch } = useQuery({
-    queryKey: ["personalList"],
-    queryFn: () => fetch("/api/personal").then((res) => res.json()),
+    queryKey: ["personalListWithAvailability"],
+    queryFn: () =>
+      fetch("/api/personal?includeAvailability=true").then((res) => res.json()),
+    staleTime: 2 * 60 * 1000, // 2 minutes - availability doesn't change that often
+    cacheTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const filteredPersonal = useMemo(() => {
@@ -31,10 +35,33 @@ export default function Page() {
       {isLoading && <Loading />}
 
       <div className="flex flex-col gap-2">
+        {filteredPersonal.length === 0 && !isLoading && (
+          <div className="text-center py-8 text-gray-500">
+            <p>No se encontró personal</p>
+            {query && (
+              <p className="text-sm mt-2">
+                Intenta con un término de búsqueda diferente
+              </p>
+            )}
+          </div>
+        )}
+
         {filteredPersonal.map((personal) => (
-          <div key={personal._id} className="border p-4 rounded">
+          <div
+            key={personal._id}
+            className="border p-4 rounded hover:bg-gray-50 transition-colors"
+          >
             <Link href={`/personal/${personal._id}`}>
-              <h3 className="text-lg font-semibold">{personal.name}</h3>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-semibold">{personal.name}</h3>
+                  <PersonalAvailabilityBadge
+                    availability={personal.availability}
+                    className="mt-1"
+                  />
+                </div>
+                <div className="text-gray-400">→</div>
+              </div>
             </Link>
           </div>
         ))}
