@@ -92,8 +92,13 @@ export function ProjectDiary({
     return acc;
   }, {});
 
-  // Get assigned workers
-  const assignedWorkers = projectData?.personal || [];
+  // Get assigned workers from personalRoles
+  const assignedWorkers =
+    projectData?.personalRoles?.map((pr) => ({
+      ...pr.personalId,
+      _roleId: pr.roleId,
+      _roleNotes: pr.notes,
+    })) || [];
 
   return (
     <div className="bg-white border rounded-lg p-6">
@@ -210,6 +215,8 @@ export function ProjectDiary({
                             selectedDate={selectedDate}
                             entry={entry}
                             isMaestro={isMaestro}
+                            role={worker._roleId}
+                            roleNotes={worker._roleNotes}
                             onRefresh={onDiaryRefetch}
                           />
                         );

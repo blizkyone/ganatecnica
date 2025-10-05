@@ -20,6 +20,7 @@ export async function GET(request, { params }) {
     const entries = await DiaryEntry.find({ worker: personalId })
       .populate("project", "name")
       .populate("worker", "name email")
+      .populate("role", "name description color")
       .sort({ date: -1 });
 
     if (entries.length === 0) {
@@ -48,6 +49,8 @@ export async function GET(request, { params }) {
           firstDate: entry.date,
           lastDate: entry.date,
           wasMaestro: entry.isMaestro,
+          roles: new Set(), // Track all roles used in this project
+          primaryRole: null, // Most common role
         });
       }
 
@@ -67,6 +70,17 @@ export async function GET(request, { params }) {
       // Check if was maestro on any day
       if (entry.isMaestro) {
         projectData.wasMaestro = true;
+      }
+
+      // Track roles used in this project
+      if (entry.role || entry.roleSnapshot) {
+        const roleInfo = entry.role || entry.roleSnapshot;
+        projectData.roles.add(JSON.stringify(roleInfo));
+
+        // Set primary role (could be the most recent or most common)
+        if (!projectData.primaryRole) {
+          projectData.primaryRole = roleInfo;
+        }
       }
     }
 
@@ -114,6 +128,7 @@ export async function GET(request, { params }) {
         },
         wasMaestro: projectData.wasMaestro,
         maestros: maestroInfo,
+        role: projectData.primaryRole, // Primary role worked in this project
       });
     }
 

@@ -6,20 +6,34 @@ export async function GET(req) {
   try {
     await connectDB();
 
-    // Get query parameter to determine if we should include availability data
+    // Get query parameters
     const { searchParams } = new URL(req.url);
     const includeAvailability =
       searchParams.get("includeAvailability") === "true";
+    const includeRoles = searchParams.get("includeRoles") === "true";
+
+    // Build query and populate based on parameters
+    let query = Personal.find();
+
+    if (includeRoles) {
+      query = query.populate("roles.roleId", "name description color");
+    }
+
+    if (!includeAvailability && !includeRoles) {
+      // Original behavior - just return personal data
+      const personal = await query.lean();
+      return Response.json(personal, { status: 200 });
+    }
+
+    // Get personal data
+    const personal = await query.lean();
 
     if (!includeAvailability) {
-      // Original behavior - just return personal data
-      const personal = await Personal.find().lean();
+      // Just roles, no availability calculation needed
       return Response.json(personal, { status: 200 });
     }
 
     // Enhanced behavior - include availability data
-    const personal = await Personal.find().lean();
-
     // Get all active projects that are not finalized
     const activeProjects = await Project.find({
       active: true,
@@ -33,8 +47,9 @@ export async function GET(req) {
       // Find projects where this person is assigned
       const assignedProjects = activeProjects.filter(
         (project) =>
-          project.personal?.some((id) => id.toString() === personId) ||
-          project.encargado?.toString() === personId
+          project.personalRoles?.some(
+            (role) => role.personalId?.toString() === personId
+          ) || project.encargado?.toString() === personId
       );
 
       // Determine availability status

@@ -152,18 +152,37 @@ export function PersonalWorkHistory({ personalId }) {
                                   {projectHistory.project.name}
                                 </div>
                               </td>
-
                               {/* Role */}
                               <td className="p-4">
-                                {projectHistory.wasMaestro ? (
-                                  <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                                    Maestro
-                                  </span>
-                                ) : (
-                                  <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                    Trabajador
-                                  </span>
-                                )}
+                                <div className="flex flex-wrap gap-1">
+                                  {projectHistory.role ? (
+                                    <span
+                                      className="inline-block px-2 py-1 text-xs rounded-full"
+                                      style={{
+                                        backgroundColor: projectHistory.role
+                                          .color
+                                          ? `${projectHistory.role.color}20`
+                                          : "#f3f4f6",
+                                        color:
+                                          projectHistory.role.color ||
+                                          "#6b7280",
+                                        border: `1px solid ${
+                                          projectHistory.role.color || "#d1d5db"
+                                        }`,
+                                      }}
+                                      title={
+                                        projectHistory.role.description ||
+                                        projectHistory.role.name
+                                      }
+                                    >
+                                      {projectHistory.role.name}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                                      Sin rol asignado
+                                    </span>
+                                  )}
+                                </div>
                               </td>
 
                               {/* Maestros */}

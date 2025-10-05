@@ -51,16 +51,6 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col items-center min-h-screen p-24">
       <p>Welcome to the Dashboard</p>
-      {error && <ErrorMessage error={error} />}
-      {listError && <ErrorMessage error={listError} />}
-      {fileUrl && (
-        <Image src={fileUrl} alt="Fetched Image" width={500} height={500} />
-      )}
-      <Button onClick={listRefetch}>
-        {isLoading || loading || listLoading ? <Loading /> : "Get File"}
-      </Button>
-      <LogoutLink>Log out</LogoutLink>
-      <UploadFileComponent folder="test" />
     </div>
   );
 }

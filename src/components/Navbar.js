@@ -44,6 +44,14 @@ export const Navbar = () => {
                 className="p-4 relative hover:cursor-pointer"
                 // onClick={() => getUserData(user.id)}
               >
+                <Link href="/roles">
+                  <p>Roles</p>
+                </Link>
+              </li>
+              <li
+                className="p-4 relative hover:cursor-pointer"
+                // onClick={() => getUserData(user.id)}
+              >
                 <Link href="/proyectos">
                   <p>Proyectos</p>
                 </Link>

@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 
+// Ensure Role model is available for population
+import "./roleModel.js";
+
 const diaryEntrySchema = mongoose.Schema(
   {
     project: {
@@ -37,6 +40,17 @@ const diaryEntrySchema = mongoose.Schema(
     isMaestro: {
       type: Boolean,
       default: false,
+    },
+    role: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role",
+      // Optional - role assigned to this worker for this project
+    },
+    roleSnapshot: {
+      // Store role information at time of entry creation for historical accuracy
+      name: String,
+      description: String,
+      color: String,
     },
     status: {
       type: String,

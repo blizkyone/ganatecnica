@@ -56,7 +56,7 @@ export async function PUT(request, { params }) {
         active: false, // Automatically set project as inactive when finalized
       },
       { new: true, runValidators: true }
-    ).populate("personal encargado");
+    ).populate("personalRoles.personalId personalRoles.roleId encargado");
 
     return Response.json(
       {

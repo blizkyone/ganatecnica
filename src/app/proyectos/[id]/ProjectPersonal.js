@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PersonalManagementModal } from "./PersonalManagementModal";
+import { RoleBadge } from "@/components/roles/RoleComponents";
 
 export function ProjectPersonal({ projectId, projectData, onUpdate }) {
   const [showPersonalSection, setShowPersonalSection] = useState(true);
@@ -43,8 +44,10 @@ export function ProjectPersonal({ projectId, projectData, onUpdate }) {
     }
   };
 
-  // Get assigned personal details
-  const assignedPersonal = projectData?.personal || [];
+  // Get assigned personal details from personalRoles
+  const personalRoles = projectData?.personalRoles || [];
+  const assignedPersonal =
+    personalRoles.map((role) => role.personalId).filter(Boolean) || [];
   const maestro = projectData?.encargado;
 
   return (
@@ -114,29 +117,58 @@ export function ProjectPersonal({ projectId, projectData, onUpdate }) {
                   Personal del Proyecto ({assignedPersonal.length})
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {assignedPersonal.map((person) => (
-                    <div
-                      key={person._id}
-                      className="p-3 border border-gray-200 rounded-lg flex items-center gap-3 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                        {person.name.charAt(0).toUpperCase()}
+                  {assignedPersonal.map((person, index) => {
+                    // Find the role assignment for this person
+                    const roleAssignment = personalRoles[index]; // Since assignedPersonal is built from personalRoles
+
+                    return (
+                      <div
+                        key={person._id}
+                        className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                            {person.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium">{person.name}</p>
+                              {person._id === maestro?._id && (
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium">
+                                  Maestro
+                                </span>
+                              )}
+                            </div>
+                            {person.email && (
+                              <p className="text-sm text-gray-600 mb-2">
+                                {person.email}
+                              </p>
+                            )}
+
+                            {/* Project Role Assignment */}
+                            {roleAssignment?.roleId && (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-500">
+                                    Rol en proyecto:
+                                  </span>
+                                  <RoleBadge
+                                    role={roleAssignment.roleId}
+                                    size="xs"
+                                  />
+                                </div>
+                                {roleAssignment.notes && (
+                                  <p className="text-xs text-gray-600 italic">
+                                    {roleAssignment.notes}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium">{person.name}</p>
-                        {person.email && (
-                          <p className="text-sm text-gray-600">
-                            {person.email}
-                          </p>
-                        )}
-                      </div>
-                      {person._id === maestro?._id && (
-                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium">
-                          Maestro
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : (
@@ -170,7 +202,7 @@ export function ProjectPersonal({ projectId, projectData, onUpdate }) {
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSave={handleSavePersonal}
-        currentPersonal={assignedPersonal?.map((p) => p._id) || []}
+        currentPersonalRoles={personalRoles}
         currentMaestro={maestro?._id || ""}
         projectId={projectId}
       />

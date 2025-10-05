@@ -7,7 +7,17 @@ export const GET = async (req, { params }) => {
   try {
     await connectDB();
 
-    const personal = await Personal.findById(id);
+    // Check if roles should be included
+    const { searchParams } = new URL(req.url);
+    const includeRoles = searchParams.get("includeRoles") === "true";
+
+    let query = Personal.findById(id);
+
+    if (includeRoles) {
+      query = query.populate("roles.roleId", "name description color");
+    }
+
+    const personal = await query;
 
     if (!personal) {
       return Response.json({ error: "Personal not found" }, { status: 404 });

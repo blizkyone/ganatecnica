@@ -3,7 +3,9 @@ import { UploadFileComponent } from "@/components/UploadFileComponent";
 import { FilePreviewComponent } from "@/components/FilePreviewComponent";
 import { CustomBreadcrumbs } from "@/components/CustomBreadcrumbs";
 import { PersonalWorkHistory } from "./PersonalWorkHistory";
+import { PersonalRoleManagement } from "./PersonalRoleManagement";
 import PersonalAvailabilityIndicator from "@/components/PersonalAvailabilityIndicator";
+import { RoleList } from "@/components/roles/RoleComponents";
 import { useState } from "react";
 import React from "react";
 import { useParams } from "next/navigation";
@@ -35,7 +37,8 @@ export const Page = () => {
     refetch,
   } = useQuery({
     queryKey: ["personalDetail", id],
-    queryFn: () => fetch(`/api/personal/${id}`).then((res) => res.json()),
+    queryFn: () =>
+      fetch(`/api/personal/${id}?includeRoles=true`).then((res) => res.json()),
     enabled: !!id, // only run the query if id is available
     onSuccess: (data) => {
       setFormData({
@@ -148,7 +151,12 @@ export const Page = () => {
           <div className="flex justify-between items-start">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold">{data.name}</h1>
-              <PersonalAvailabilityIndicator personalId={id} />
+              <div className="flex items-center gap-3">
+                <PersonalAvailabilityIndicator personalId={id} />
+                {data.roles && data.roles.length > 0 && (
+                  <RoleList roles={data.roles} size="sm" />
+                )}
+              </div>
             </div>
             {!isEditing && (
               <Button onClick={handleEdit} variant="outline">
@@ -318,6 +326,13 @@ export const Page = () => {
               </div>
             )}
           </div>
+
+          {/* Personal Role Management Section */}
+          <PersonalRoleManagement
+            personalId={id}
+            personalData={data}
+            onUpdate={refetch}
+          />
 
           {/* Personal Work History Section */}
           <PersonalWorkHistory personalId={id} />

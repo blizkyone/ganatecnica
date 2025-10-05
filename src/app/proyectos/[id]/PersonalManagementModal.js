@@ -4,17 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Loading from "@/components/Loading";
 import { useQuery } from "@tanstack/react-query";
+import { useRoles } from "@/hooks/useRoles";
+import { RoleBadge } from "@/components/roles/RoleComponents";
 
 export function PersonalManagementModal({
   isOpen,
   onClose,
   onSave,
-  currentPersonal = [],
+  currentPersonalRoles = [],
   currentMaestro = "",
   projectId,
 }) {
   const [selectedPersonal, setSelectedPersonal] = useState([]);
   const [selectedMaestro, setSelectedMaestro] = useState("");
+  const [personalRoles, setPersonalRoles] = useState({}); // { personalId: { roleId, notes } }
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -31,15 +34,37 @@ export function PersonalManagementModal({
     enabled: isOpen, // Only fetch when modal is open
   });
 
+  // Fetch available roles for assignment
+  const { roles: availableRoles, isLoading: rolesLoading } = useRoles({
+    activeOnly: true,
+  });
+
   // Initialize form data when modal opens or current data changes
   useEffect(() => {
     if (isOpen) {
-      setSelectedPersonal([...currentPersonal]);
+      // Extract current personal IDs from personalRoles
+      const currentPersonalIds =
+        currentPersonalRoles?.map(
+          (role) => role.personalId._id || role.personalId
+        ) || [];
+      setSelectedPersonal(currentPersonalIds);
       setSelectedMaestro(currentMaestro);
+
+      // Initialize personal roles from current project assignments
+      const roleMap = {};
+      currentPersonalRoles?.forEach((assignment) => {
+        const personalId = assignment.personalId._id || assignment.personalId;
+        roleMap[personalId] = {
+          roleId: assignment.roleId?._id || assignment.roleId || "",
+          notes: assignment.notes || "",
+        };
+      });
+      setPersonalRoles(roleMap);
+
       setError(null);
       setSearchTerm("");
     }
-  }, [isOpen, currentPersonal, currentMaestro]);
+  }, [isOpen, currentPersonalRoles, currentMaestro]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -74,6 +99,12 @@ export function PersonalManagementModal({
         if (personalId === selectedMaestro) {
           setSelectedMaestro("");
         }
+        // Remove role assignment for this person
+        setPersonalRoles((prevRoles) => {
+          const newRoles = { ...prevRoles };
+          delete newRoles[personalId];
+          return newRoles;
+        });
         return prev.filter((id) => id !== personalId);
       } else {
         return [...prev, personalId];
@@ -87,6 +118,13 @@ export function PersonalManagementModal({
       setSelectedPersonal((prev) => [...prev, personalId]);
     }
     setSelectedMaestro(personalId);
+  };
+
+  const handleRoleAssignment = (personalId, roleId, notes = "") => {
+    setPersonalRoles((prev) => ({
+      ...prev,
+      [personalId]: { roleId, notes },
+    }));
   };
 
   const handleSave = async () => {
@@ -104,8 +142,15 @@ export function PersonalManagementModal({
     setError(null);
 
     try {
+      // Prepare personal roles for the project - everyone gets an entry
+      const projectPersonalRoles = selectedPersonal.map((personalId) => ({
+        personalId,
+        roleId: personalRoles[personalId]?.roleId || null,
+        notes: personalRoles[personalId]?.notes || "",
+      }));
+
       await onSave({
-        personal: selectedPersonal,
+        personalRoles: projectPersonalRoles,
         encargado: selectedMaestro,
       });
       onClose();
@@ -117,8 +162,13 @@ export function PersonalManagementModal({
   };
 
   const handleCancel = () => {
-    setSelectedPersonal([...currentPersonal]);
+    const currentPersonalIds =
+      currentPersonalRoles?.map(
+        (role) => role.personalId._id || role.personalId
+      ) || [];
+    setSelectedPersonal(currentPersonalIds);
     setSelectedMaestro(currentMaestro);
+    setPersonalRoles({});
     setError(null);
     setSearchTerm("");
     onClose();
@@ -230,48 +280,113 @@ export function PersonalManagementModal({
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                          {person.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">{person.name}</p>
-                          {person.email && (
-                            <p className="text-sm text-gray-600">
-                              {person.email}
-                            </p>
-                          )}
-                          <div className="mt-1">
-                            {getAvailabilityBadge(person.availability)}
+                    <div className="space-y-3">
+                      {/* Personal Info and Selection */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                            {person.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">{person.name}</p>
+                            {person.email && (
+                              <p className="text-sm text-gray-600">
+                                {person.email}
+                              </p>
+                            )}
+                            <div className="mt-1">
+                              {getAvailabilityBadge(person.availability)}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedPersonal.includes(person._id)}
-                            onChange={() => handlePersonalToggle(person._id)}
-                            className="w-4 h-4 rounded"
-                          />
-                          <span className="text-sm font-medium">Asignar</span>
-                        </label>
-                        {selectedPersonal.includes(person._id) && (
+                        <div className="flex items-center gap-4">
                           <label className="flex items-center gap-2">
                             <input
-                              type="radio"
-                              name="maestro"
-                              checked={selectedMaestro === person._id}
-                              onChange={() => handleMaestroSelect(person._id)}
-                              className="w-4 h-4"
+                              type="checkbox"
+                              checked={selectedPersonal.includes(person._id)}
+                              onChange={() => handlePersonalToggle(person._id)}
+                              className="w-4 h-4 rounded"
                             />
-                            <span className="text-sm font-medium text-yellow-700">
-                              Maestro
-                            </span>
+                            <span className="text-sm font-medium">Asignar</span>
                           </label>
-                        )}
+                          {selectedPersonal.includes(person._id) && (
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="maestro"
+                                checked={selectedMaestro === person._id}
+                                onChange={() => handleMaestroSelect(person._id)}
+                                className="w-4 h-4"
+                              />
+                              <span className="text-sm font-medium text-yellow-700">
+                                Maestro
+                              </span>
+                            </label>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Role Assignment - Only show when person is selected */}
+                      {selectedPersonal.includes(person._id) && (
+                        <div className="pt-3 border-t border-gray-200">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">
+                              Rol en este proyecto (opcional):
+                            </label>
+                            <div className="flex gap-2">
+                              <select
+                                value={personalRoles[person._id]?.roleId || ""}
+                                onChange={(e) =>
+                                  handleRoleAssignment(
+                                    person._id,
+                                    e.target.value,
+                                    personalRoles[person._id]?.notes || ""
+                                  )
+                                }
+                                className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                disabled={rolesLoading}
+                              >
+                                <option value="">Sin rol específico</option>
+                                {availableRoles?.map((role) => (
+                                  <option key={role._id} value={role._id}>
+                                    {role.name}
+                                  </option>
+                                ))}
+                              </select>
+                              {personalRoles[person._id]?.roleId && (
+                                <div className="flex items-center">
+                                  {(() => {
+                                    const role = availableRoles?.find(
+                                      (r) =>
+                                        r._id ===
+                                        personalRoles[person._id]?.roleId
+                                    );
+                                    return role ? (
+                                      <RoleBadge role={role} size="xs" />
+                                    ) : null;
+                                  })()}
+                                </div>
+                              )}
+                            </div>
+                            {personalRoles[person._id]?.roleId && (
+                              <input
+                                type="text"
+                                placeholder="Notas sobre el rol (opcional)"
+                                value={personalRoles[person._id]?.notes || ""}
+                                onChange={(e) =>
+                                  handleRoleAssignment(
+                                    person._id,
+                                    personalRoles[person._id]?.roleId,
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                maxLength={200}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

@@ -9,6 +9,8 @@ export function WorkerDiaryEntry({
   selectedDate,
   entry,
   isMaestro,
+  role,
+  roleNotes,
   onRefresh,
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -59,6 +61,17 @@ export function WorkerDiaryEntry({
       return;
     }
 
+    // Validate times if both are provided
+    if (clockOutTime) {
+      const startTime = new Date(`${selectedDate}T${clockInTime}:00`);
+      const endTime = new Date(`${selectedDate}T${clockOutTime}:00`);
+
+      if (endTime <= startTime) {
+        setError("La hora de salida debe ser posterior a la hora de entrada");
+        return;
+      }
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -66,16 +79,24 @@ export function WorkerDiaryEntry({
       // Create full datetime
       const startDateTime = new Date(`${selectedDate}T${clockInTime}:00`);
 
+      const requestData = {
+        projectId,
+        workerId: worker._id || worker,
+        startTime: startDateTime.toISOString(),
+        notes,
+        isMaestro,
+      };
+
+      // Add end time if provided
+      if (clockOutTime) {
+        const endDateTime = new Date(`${selectedDate}T${clockOutTime}:00`);
+        requestData.endTime = endDateTime.toISOString();
+      }
+
       const response = await fetch("/api/diary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId,
-          workerId: worker._id || worker,
-          startTime: startDateTime.toISOString(),
-          notes,
-          isMaestro,
-        }),
+        body: JSON.stringify(requestData),
       });
 
       if (!response.ok) {
@@ -302,11 +323,26 @@ export function WorkerDiaryEntry({
           />
           <div>
             <div className="font-medium">{workerName}</div>
-            {isMaestro && (
-              <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full mt-1">
-                Maestro
-              </span>
-            )}
+            <div className="flex gap-1 mt-1">
+              {isMaestro && (
+                <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                  Maestro
+                </span>
+              )}
+              {role && (
+                <span
+                  className="inline-block px-2 py-1 text-xs rounded-full"
+                  style={{
+                    backgroundColor: role.color ? `${role.color}20` : "#f3f4f6",
+                    color: role.color || "#6b7280",
+                    border: `1px solid ${role.color || "#d1d5db"}`,
+                  }}
+                  title={role.description || role.name}
+                >
+                  {role.name}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </td>

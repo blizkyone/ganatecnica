@@ -67,7 +67,7 @@ export async function POST(request) {
     await connectDB();
 
     const data = await request.json();
-    const { projectId, workerId, startTime, notes, isMaestro } = data;
+    const { projectId, workerId, startTime, endTime, notes, isMaestro } = data;
 
     if (!projectId || !workerId) {
       return NextResponse.json(
@@ -76,9 +76,11 @@ export async function POST(request) {
       );
     }
 
-    // Verify project and worker exist
+    // Verify project and worker exist, and populate project with personalRoles
     const [project, worker] = await Promise.all([
-      Proyecto.findById(projectId),
+      Proyecto.findById(projectId).populate(
+        "personalRoles.personalId personalRoles.roleId"
+      ),
       Personal.findById(workerId),
     ]);
 
@@ -90,8 +92,40 @@ export async function POST(request) {
       return NextResponse.json({ error: "Worker not found" }, { status: 404 });
     }
 
+    // Find the worker's role in this project
+    let workerRole = null;
+    let roleSnapshot = null;
+
+    const personalRole = project.personalRoles?.find(
+      (pr) =>
+        pr.personalId?._id?.toString() === workerId ||
+        pr.personalId?.toString() === workerId
+    );
+
+    if (personalRole && personalRole.roleId) {
+      workerRole = personalRole.roleId._id || personalRole.roleId;
+      // Create role snapshot for historical accuracy
+      const roleData = personalRole.roleId._id ? personalRole.roleId : null;
+      if (roleData) {
+        roleSnapshot = {
+          name: roleData.name,
+          description: roleData.description,
+          color: roleData.color,
+        };
+      }
+    }
+
     const today = DiaryEntry.getTodayDate();
     const clockInTime = startTime ? new Date(startTime) : new Date();
+    const clockOutTime = endTime ? new Date(endTime) : null;
+
+    // Validate that end time is after start time if both are provided
+    if (clockOutTime && clockOutTime <= clockInTime) {
+      return NextResponse.json(
+        { error: "End time must be after start time" },
+        { status: 400 }
+      );
+    }
 
     // Extract date from the provided startTime, or use today as fallback
     const entryDate = startTime
@@ -113,14 +147,23 @@ export async function POST(request) {
     }
 
     // Create new diary entry
-    const diaryEntry = new DiaryEntry({
+    const diaryEntryData = {
       project: projectId,
       worker: workerId,
       date: entryDate,
       startTime: clockInTime,
       notes,
       isMaestro: isMaestro || false,
-    });
+      role: workerRole,
+      roleSnapshot: roleSnapshot,
+    };
+
+    // Add end time if provided
+    if (clockOutTime) {
+      diaryEntryData.endTime = clockOutTime;
+    }
+
+    const diaryEntry = new DiaryEntry(diaryEntryData);
 
     await diaryEntry.save();
 

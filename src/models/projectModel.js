@@ -1,6 +1,10 @@
 import mongoose, { model } from "mongoose";
 // import shortid from "shortid";
 
+// Ensure Personal and Role models are available for population
+import "./personalModel.js";
+import "./roleModel.js";
+
 const pointSchema = mongoose.Schema({
   type: {
     type: String,
@@ -25,10 +29,21 @@ const proyectoSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Personal",
     },
-    personal: [
+    personalRoles: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Personal",
+        personalId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Personal",
+          required: true,
+        },
+        roleId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Role",
+        },
+        notes: {
+          type: String,
+          maxlength: 200,
+        },
       },
     ],
     address: String,
