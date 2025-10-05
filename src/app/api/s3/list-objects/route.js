@@ -18,7 +18,7 @@ export async function GET(req) {
       ? response.Contents.map((item) => item.Key)
       : [];
 
-    console.log(`Files in folder '${folder}':`, files);
+    // console.log(`Files in folder '${folder}':`, files);
 
     return Response.json(files, { status: 200 });
   } catch (error) {

@@ -21,6 +21,16 @@ const proyectoSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Cliente",
     },
+    encargado: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Personal",
+    },
+    personal: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Personal",
+      },
+    ],
     address: String,
     location: pointSchema,
     email: String,
