@@ -16,6 +16,7 @@ export function FilePreviewComponent({
   const [previewFile, setPreviewFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDocuments, setShowDocuments] = useState(true);
 
   const handleFileClick = async (fileKey) => {
     try {
@@ -96,67 +97,87 @@ export function FilePreviewComponent({
 
   return (
     <>
+      {/* Toggle Button */}
+      <div className="mb-4">
+        <Button
+          onClick={() => setShowDocuments(!showDocuments)}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <span>{showDocuments ? "📁" : "📂"}</span>
+          {showDocuments ? "Ocultar Documentos" : "Mostrar Documentos"}
+          {filesData && Array.isArray(filesData) && filesData.length > 0 && (
+            <span className="ml-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+              {filesData.length}
+            </span>
+          )}
+        </Button>
+      </div>
+
       {/* File List */}
-      <div className="space-y-2">
-        {filesLoading && <Loading />}
-        {filesError && <ErrorMessage error={filesError} />}
-        {filesData && Array.isArray(filesData) && filesData.length > 0
-          ? filesData.map((file) => {
-              const fileName = file.replace(`${folderId}/`, "");
-              return (
-                <div
-                  key={file}
-                  className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <button
-                      onClick={() => handleFileClick(file)}
-                      className="text-blue-600 hover:text-blue-800 hover:underline text-left flex-1"
-                    >
-                      <span className="flex items-center">
-                        {isImageFile(fileName) && (
-                          <span className="mr-2">🖼️</span>
-                        )}
-                        {isPdfFile(fileName) && (
-                          <span className="mr-2">📄</span>
-                        )}
-                        {!isImageFile(fileName) && !isPdfFile(fileName) && (
-                          <span className="mr-2">📎</span>
-                        )}
-                        {fileName}
-                      </span>
-                    </button>
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
+      {showDocuments && (
+        <div className="space-y-2">
+          {filesLoading && <Loading />}
+          {filesError && <ErrorMessage error={filesError} />}
+          {filesData && Array.isArray(filesData) && filesData.length > 0
+            ? filesData.map((file) => {
+                const fileName = file.replace(`${folderId}/`, "");
+                return (
+                  <div
+                    key={file}
+                    className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <button
                         onClick={() => handleFileClick(file)}
-                        className="text-xs"
+                        className="text-blue-600 hover:text-blue-800 hover:underline text-left flex-1"
                       >
-                        Preview
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteFile(file)}
-                        className="text-xs"
-                        disabled={isDeleting}
-                      >
-                        Delete
-                      </Button>
+                        <span className="flex items-center">
+                          {isImageFile(fileName) && (
+                            <span className="mr-2">🖼️</span>
+                          )}
+                          {isPdfFile(fileName) && (
+                            <span className="mr-2">📄</span>
+                          )}
+                          {!isImageFile(fileName) && !isPdfFile(fileName) && (
+                            <span className="mr-2">📎</span>
+                          )}
+                          {fileName}
+                        </span>
+                      </button>
+                      <div className="flex gap-2 ml-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleFileClick(file)}
+                          className="text-xs"
+                        >
+                          Preview
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteFile(file)}
+                          className="text-xs"
+                          disabled={isDeleting}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
+                );
+              })
+            : filesData &&
+              Array.isArray(filesData) &&
+              filesData.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No hay archivos subidos aún</p>
                 </div>
-              );
-            })
-          : filesData &&
-            Array.isArray(filesData) &&
-            filesData.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <p>No hay archivos subidos aún</p>
-              </div>
-            )}
-      </div>
+              )}
+        </div>
+      )}
 
       {/* File Preview Modal */}
       {previewFile && previewUrl && (

@@ -2,6 +2,8 @@
 import { CustomBreadcrumbs } from "@/components/CustomBreadcrumbs";
 import { ProjectInformation } from "./ProjectInformation";
 import { ProjectDocuments } from "./ProjectDocuments";
+import { ProjectPersonal } from "./ProjectPersonal";
+import { ProjectDiary } from "./ProjectDiary";
 import React from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +12,13 @@ import ErrorMessage from "@/components/Message";
 
 export const Page = () => {
   const { id } = useParams();
+  const [selectedDate, setSelectedDate] = React.useState(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  });
 
   const {
     data,
@@ -31,6 +40,21 @@ export const Page = () => {
     queryKey: ["listFiles", id],
     queryFn: () =>
       fetch(`/api/s3/list-objects?folder=${id}`).then((res) => res.json()),
+  });
+
+  // Fetch diary entries for the project
+  const {
+    data: diaryData,
+    isLoading: diaryLoading,
+    error: diaryError,
+    refetch: refetchDiary,
+  } = useQuery({
+    queryKey: ["projectDiary", id, selectedDate],
+    queryFn: () =>
+      fetch(`/api/diary/project/${id}?date=${selectedDate}`).then((res) =>
+        res.json()
+      ),
+    enabled: !!id,
   });
 
   const handleProjectUpdate = async (formData) => {
@@ -61,6 +85,23 @@ export const Page = () => {
       {data && (
         <>
           <ProjectInformation data={data} onUpdate={handleProjectUpdate} />
+
+          <ProjectPersonal
+            projectId={id}
+            projectData={data}
+            onUpdate={refetch}
+          />
+
+          <ProjectDiary
+            projectId={id}
+            projectData={data}
+            diaryData={diaryData}
+            diaryLoading={diaryLoading}
+            diaryError={diaryError}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            onDiaryRefetch={refetchDiary}
+          />
 
           <ProjectDocuments
             filesData={filesData}

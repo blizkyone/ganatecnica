@@ -7,7 +7,9 @@ export const GET = async (req, { params }) => {
   try {
     await connectDB();
 
-    const proyecto = await Proyecto.findById(id);
+    const proyecto = await Proyecto.findById(id)
+      .populate("personal", "name email phone")
+      .populate("encargado", "name email phone");
 
     if (!proyecto) {
       return Response.json({ error: "Proyecto not found" }, { status: 404 });
@@ -30,7 +32,9 @@ export const PUT = async (req, { params }) => {
     const proyecto = await Proyecto.findByIdAndUpdate(id, data, {
       new: true,
       runValidators: true,
-    });
+    })
+      .populate("personal", "name email phone")
+      .populate("encargado", "name email phone");
 
     if (!proyecto) {
       return Response.json({ error: "Proyecto not found" }, { status: 404 });
